@@ -1,6 +1,7 @@
 import streamlit as st
 from APIaccess import get_data
 import plotly.express as px
+from datetime import datetime
 
 # Set the title for the Streamlit app
 st.title("Forecastify")
@@ -19,8 +20,6 @@ view_by = st.selectbox("Select data to view", ("Temperature", "Sky"))
 # Display a subheader indicating the chosen view, number of days, and place
 st.subheader(f"{view_by} for the next {day} days in {place}")
 
-# Create a selectbox for the user to choose between viewing temperature or sky conditions
-view_by = st.selectbox("Select data to view", ("Temperature",))
 
 # Check if the user has entered a place
 if place:
@@ -40,6 +39,35 @@ if place:
 
             # Display the line chart in the Streamlit app
             st.plotly_chart(figure)
+        if view_by == "Sky":
+            images = {"Clear": "images/clear.png", "Clouds": "images/cloud.png",
+                      "Rain": "images/rain.png", "Snow": "images/snow.png"}
+
+            # Extract date, time, description, and sky conditions
+            date_time_description_sky = [
+                (dict['dt_txt'], dict['weather'][0]['description'], dict['weather'][0]['main'])
+                for dict in filtered_data
+            ]
+
+            # Specify the number of columns for display
+            num_columns = 4
+
+            # Calculate the number of items per column
+            items_per_column = len(date_time_description_sky) // num_columns
+
+            # Create multiple columns
+            columns = st.columns(num_columns)
+
+            # Iterate through the data and display in columns
+            for i in range(num_columns):
+                with columns[i]:
+                    for j in range(i * items_per_column, (i + 1) * items_per_column):
+                        if j < len(date_time_description_sky):
+                            date_time, description, condition = date_time_description_sky[j]
+                            date_time = datetime.strptime(date_time, "%Y-%m-%d %H:%M:%S")
+                            st.write(date_time.strftime("%A, %B %d, %Y %I:%M %p"))
+                            st.write(f"Condition: {description.title()}")
+                            st.image(images[condition], width=115)
 
     # Handle the KeyError exception, which is raised if the 'place' does not exist in the API response
     except KeyError:
